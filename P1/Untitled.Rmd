@@ -1,0 +1,188 @@
+---
+title: "STAT400-Project1"
+output: html_notebook
+---
+
+```{r}
+female <- read.csv("female.csv")
+head(female)
+```
+
+```{r}
+library(tidyverse)
+
+female <- female %>%filter(Country.Name == "Brazil" | Country.Name == "India" | Country.Name == "United States")
+head(female)
+```
+
+```{r}
+colnames(female)
+```
+
+```{r}
+rel_col <- which(colnames(female)=="Country.Name" | colnames(female)== "X2014..YR2014." | colnames(female)== "X2017..YR2017." | colnames(female) == "X2021..YR2021." )
+rel_col
+```
+
+```{r}
+female <- female[rel_col] %>% rename("2014" = 2, "2017" = 3, "2021" = 4)
+head(female)
+```
+```{r}
+transpose_f <- data.frame(t(female[-1]))
+colnames(transpose_f) <- female[, 1]
+head(transpose_f)
+```
+
+```{r}
+transpose_f$Brazil = as.numeric(transpose_f$Brazil) 
+transpose_f$India = as.numeric(transpose_f$India)
+transpose_f$"United States" = as.numeric(transpose_f$"United States")
+head(transpose_f)
+```
+```{r}
+transpose_f <- transpose_f %>% mutate_if(is.numeric, as.character)
+head(transpose_f)
+```
+```{r}
+transpose_f <- transpose_f %>% mutate_if(is.character, as.numeric)
+head(transpose_f)
+```
+```{r}
+summarise_each(transpose_f, list(mean))
+```
+```{r}
+transpose_f %>%
+  summarise(across(c(Brazil, India, "United States"), list(mean=mean, sd=sd)))
+```
+```{r}
+year <- c(2014, 2017,2021)
+p <- ggplot(data=transpose_f, aes(x=year, y=India, group=1)) +
+  geom_line()+
+  geom_point()
+  p + ylab("Percentage Ownership")
+```
+```{r}
+male <- read.csv(file = "male.csv")
+male <- male %>%
+  filter(Country.Name == "Brazil" | Country.Name == "India" | Country.Name == "United States") 
+
+male <- male[rel_col] %>% 
+  rename("2014" = 2, "2017" = 3, "2021" = 4)
+
+transpose_m <- data.frame(t(male[-1]))
+colnames(transpose_m) <- male[, 1]
+
+transpose_m$Brazil = as.numeric(as.character(transpose_m$Brazil)) 
+transpose_m$India = as.numeric(as.character(transpose_m$India))
+transpose_m$"United States" = as.numeric(as.character((transpose_m$"United States")))
+
+head(transpose_m)
+```
+```{r}
+transpose_m <- rename(transpose_m, "Brazil_m" = 1, "India_m" = 2, "United_States_m" = 3)
+head(transpose_m)
+```
+```{r}
+transpose_m <- rownames_to_column(transpose_m, var="Year") 
+transpose_f <- rownames_to_column(transpose_f, var="Year")
+
+acct_owner_by_gender <- merge(x = transpose_m, y = transpose_f, by = "Year", all.x = TRUE)
+acct_owner_by_gender <- rename(acct_owner_by_gender, "United_States" = 7)
+head(acct_owner_by_gender)
+```
+```{r}
+gfg_plot <- ggplot(acct_owner_by_gender, aes(x=year)) +  
+    geom_line(aes(y = India), color = "black") +
+    geom_line(aes(y = India_m), color = "red") +
+    geom_line(aes(y = Brazil), color = "green") +
+    geom_line(aes(y = Brazil_m), color = "blue") +
+    geom_line(aes(y = United_States), color = "purple") +
+    geom_line(aes(y = United_States_m), color = "violet") 
+    gfg_plot + ylab("Percentage Ownership")
+gfg_plot
+```
+1. y-axis labels changed in plots above using ylab("Percentage Ownership")
+2. Based on the plot, account ownership has been generally on the rise in recent years, with the exception of males from India. It is interesting that the data shows how there is a higher percentage of male account ownership than female, except for in the United States.
+3. If 2017 is disregarded, one could not with certainty say that account percentages ahvve been increasing due to India decreasing afterwards.
+4. Below:
+---
+title: "STAT400-Project1"
+output: html_notebook
+---
+
+```{r}
+primary <- read.csv("primary.csv")
+primary <- primary %>%filter(Country.Name == "China" | Country.Name == "Canada" | Country.Name == "Germany" | Country.Name == "United Kingdom" | Country.Name == "Spain")
+rel_col <- which(colnames(primary)=="Country.Name" | colnames(primary)== "X2014..YR2014." | colnames(primary)== "X2017..YR2017." | colnames(primary) == "X2021..YR2021." )
+primary <- primary[rel_col] %>% rename("2014" = 2, "2017" = 3, "2021" = 4)
+transpose_p <- data.frame(t(primary[-1]))
+colnames(transpose_p) <- primary[, 1]
+transpose_p$China = as.numeric(transpose_p$China) 
+transpose_p$Canada = as.numeric(transpose_p$Canada)
+transpose_p$Germany = as.numeric(transpose_p$Germany)
+transpose_p$"United Kingdom" = as.numeric(transpose_p$"United Kingdom")
+transpose_p$Spain = as.numeric(transpose_p$Spain)
+
+transpose_p <- transpose_p %>% mutate_if(is.numeric, as.character)
+transpose_p <- transpose_p %>% mutate_if(is.character, as.numeric)
+summarise_each(transpose_p, list(mean))
+```
+```{r}
+transpose_p %>%
+  summarise(across(c(Canada, China, "United Kingdom", Germany, Spain), list(mean=mean, sd=sd)))
+```
+```{r}
+year <- c(2014, 2017,2021)
+p <- ggplot(data=transpose_p, aes(x=year, y=Germany, group=1)) +
+  geom_line()+
+  geom_point()
+  p + ylab("Percentage Ownership")
+```
+```{r}
+secondary <- read.csv(file = "secondary.csv")
+secondary <- secondary %>%
+  filter(Country.Name == "Germany" | Country.Name == "China" | Country.Name == "United Kingdom" | Country.Name == "Spain" | Country.Name == "Canada") 
+
+secondary <- secondary[rel_col] %>% 
+  rename("2014" = 2, "2017" = 3, "2021" = 4)
+
+transpose_s <- data.frame(t(secondary[-1]))
+colnames(transpose_s) <- secondary[, 1]
+
+transpose_s$Germany = as.numeric(as.character(transpose_s$Germany)) 
+transpose_s$China = as.numeric(as.character(transpose_s$China))
+transpose_s$"United Kingdom" = as.numeric(as.character((transpose_s$"United Kingdom")))
+transpose_s$Spain = as.numeric(as.character(transpose_s$Spain))
+transpose_s$Canada = as.numeric(as.character(transpose_s$Canada))
+
+head(transpose_s)
+```
+```{r}
+transpose_s <- rename(transpose_s, "Canada_s" = 1, "China_s" = 2, "Germany_s" = 3, "Spain_s" = 4, "United_Kingdom_s" = 5)
+head(transpose_s)
+```
+```{r}
+transpose_s <- rownames_to_column(transpose_s, var="Year") 
+transpose_p <- rownames_to_column(transpose_p, var="Year")
+
+acct_owner_by_gender <- merge(x = transpose_s, y = transpose_p, by = "Year", all.x = TRUE)
+acct_owner_by_gender <- rename(acct_owner_by_gender, "United_Kingdom" = 11)
+head(acct_owner_by_gender)
+```
+```{r}
+gfg_plot <- ggplot(acct_owner_by_gender, aes(x=year)) +  
+    geom_line(aes(y = Canada), color = "pink") +
+    geom_line(aes(y = Canada_s), color = "red") +
+    geom_line(aes(y = China), color = "green") +
+    geom_line(aes(y = China_s), color = "green4") +
+    geom_line(aes(y = Germany), color = "violet") +
+    geom_line(aes(y = Germany_s), color = "purple") +
+    geom_line(aes(y = Spain), color = "skyblue") +
+    geom_line(aes(y = Spain_s), color = "blue") +
+    geom_line(aes(y = United_Kingdom), color = "gray") +
+    geom_line(aes(y = United_Kingdom_s), color = "black")
+    gfg_plot + ylab("Percentage Ownership")
+gfg_plot
+```
+

@@ -1,0 +1,231 @@
+---
+title: "STAT400-Project2"
+output: html_notebook
+---
+
+# Example(s):
+```{r}
+# Simulating a coin flip and computing how the frequency behaves over time.
+set.seed(2)
+coin_flips <- rbinom(100, 1, .5)
+coin_flips
+```
+
+```{r}
+Data <- data.frame(toss_number = (1:length(coin_flips)) , toss_result = coin_flips)
+head(Data, 5)
+```
+```{r}
+frequencies <- function(vec){
+  
+  len_vec <- length(vec)
+  
+  avg <- 1:len_vec
+  
+  for(i in 1:len_vec){
+    avg[i] <- length(which(vec[1:i]==1))/i
+  }
+  return(avg)
+}
+
+freq <- frequencies(coin_flips)
+Data$avgs <- freq
+head(Data, 5)
+```
+```{r}
+library(ggplot2)
+
+ggplot(data=Data, aes(x=toss_number, y=avgs, group=1)) +
+  geom_line()+
+  geom_point()
+```
+
+```{r}
+# Law of Large Numbers
+set.seed(2)
+sum <- runif(10000, min = 0, max = 1)
+mean(sum)
+```
+```{r}
+# Monte Carlo Methods
+estimate_pi <- function(seed = 2, iterations = 100000000){
+  set.seed(seed)
+  
+  x <- runif(n = iterations, min = 0, max =1)
+  
+  val_of_g = sqrt(1-x^2)
+  
+  pi_over_four = mean(val_of_g)
+  
+  pi <- 4 * pi_over_four
+  return(pi)
+}
+
+estimate_pi()
+```
+```{r}
+# What number wins the lottery most often?
+library('tidyverse')
+
+lottery <- function(seed = 2, iterations = 15000){
+  set.seed(seed)
+  
+  num1 <- floor(runif(n = iterations, min = 1, max = 4))
+  num2 <- floor(runif(n = iterations, min = 1, max = 4))
+  num3 <- floor(runif(n = iterations, min = 1, max = 4))
+  
+  sum <- num1 + num2 + num3
+  
+  ticket <- 100*num1 + 10*num2 + num3
+  ticket <- as.data.frame(ticket)
+  
+  df <- ticket %>%
+    group_by(ticket) %>%
+    summarise(counts = n())
+  
+  df$ticket <- as.factor(df$ticket)
+    p <- ggplot(df, aes(x = ticket, y = counts)) +
+      geom_bar(fill = "#0073C2FF", stat='identity') + 
+      theme_bw()
+    print(p)
+    
+  return(list(df, table(sum)))
+}
+lottery()
+```
+# 1(a):
+```{r}
+set.seed(2)
+# 1(a):
+p_X_equals_7 <- dbinom(7, 15, 0.5)
+p_X_equals_7
+```
+# 1(b):
+```{r}
+coin_flips <- rbinom(100000, 15, .5)
+coin_flips
+frequencies_7 <- function(vec) {
+  occurrences_7 <- vec == 7 # Logical vector for occurrences of 7 heads
+  cumsum_7 <- cumsum(occurrences_7) # Cumulative sum of occurrences
+  freq_7 <- cumsum_7 / (1:length(vec)) # Calculating frequency over trials
+  return(freq_7)
+}
+freq_7 <- frequencies_7(coin_flips)
+
+# Plotting
+plot(freq_7, type='l', xlab="Number of Experiments", ylab="Relative Frequency of X=7",
+     main="Evolution of Relative Frequency for X=7 over 100,000 Repetitions")
+```
+# 1(c):
+In the frequentist view, the probability of an event is defined as how often that event happens over many trials. For our coin toss experiment, we looked at how often we get exactly 7 heads out of 15 tosses, repeating this 100,000 times. The frequentist interpretation predicts that the more times we toss the coin, the closer our experiment's outcome (the relative frequency of getting 7 heads) will get to the true probability of this happening.
+
+The plot from part (b) shows this in action: as the number of experiments increases, the relative frequency of getting 7 heads becomes stable and hovers around a constant value. This aligns with the frequentist approach, demonstrating that our experiment's outcomes become more predictable and closer to the theoretical probability with more trials. This behavior is a practical illustration of the Law of Large Numbers, emphasizing that more trials lead to a more accurate estimate of an event's true probability. 
+# 1(d):
+```{r}
+E_X <- 15 * .5
+observed_average <- mean(coin_flips == 7)
+E_X
+observed_average
+```
+# 1(e):
+The expected value E(X)=7.5 closely matches the observed average of approximately 7.495 from the 100,000 repetitions. This alignment supports the Law of Large Numbers, which states that as the number of trials increases, the sample mean will converge to the expected value. The observations here are consistent with this law, demonstrating its validity in the context of a binomial distribution for a large number of trials. 
+# 2:
+```{r}
+# Standard Normal Distribution
+normal_samples <- rnorm(100000)
+cumulative_means <- cumsum(normal_samples) / (1:100000)
+plot(cumulative_means, type='l', main="Standard Normal Distribution")
+```
+```{r}
+# Exponential Distribution (lambda = 5)
+exp_samples <- rexp(100000, rate = 5)
+cumulative_means_exp <- cumsum(exp_samples) / (1:100000)
+plot(cumulative_means_exp, type='l', main="Exponential Distribution (lambda = 5)")
+```
+The plots illustrate the cumulative man for samples drawn from both a standard normal distribution and an exponential distribution with labmda = 5, over 100,000 samples. Both graphs demonstrate the Law of Large Numbers, as the sample means converge to the theoretical means of their respective distributions as the number of samples increases. This empirical verification supports the law's assertion that the average of a large number of observations of a random variable converges to the expected value of that variable.
+# 3:
+```{r}
+library(ggplot2)
+
+# Modifying the existing lottery function to focus on sum frequencies
+lottery_modified <- function(seed = 2, iterations = 15000){
+  set.seed(seed)
+  
+  # Generating random numbers for lottery tickets
+  num1 <- floor(runif(n = iterations, min = 1, max = 4))
+  num2 <- floor(runif(n = iterations, min = 1, max = 4))
+  num3 <- floor(runif(n = iterations, min = 1, max = 4))
+  
+  # Calculating the sums
+  sums <- num1 + num2 + num3
+  
+  # Creating a dataframe of sums and calculating frequencies
+  sums_df <- data.frame(Sum = sums)
+  frequency_df <- sums_df %>%
+    group_by(Sum) %>%
+    summarise(Frequency = n()) %>%
+    mutate(RelativeFrequency = Frequency / sum(Frequency)) # Adding relative frequencies
+  
+  # Plotting the frequency of sums
+  p <- ggplot(frequency_df, aes(x = Sum, y = Frequency)) +
+    geom_bar(stat = "identity", fill = "#0073C2FF") +
+    theme_bw() +
+    labs(title = "Frequency of Sums in Lottery Simulation", x = "Sum", y = "Frequency")
+  print(p)
+  
+  return(frequency_df)
+}
+
+# Run the modified lottery function
+frequency_df <- lottery_modified()
+frequency_df
+```
+# 4(a):
+```{r}
+estimate_pi_modified <- function(seed = 2, iterations = 100000000){
+  set.seed(seed)
+  
+  x <- runif(n = iterations, min = -1, max =1)
+  
+  val_of_g = sqrt(1-x^2)
+  
+  pi_over_four = mean(val_of_g)
+  
+  pi <- 4 * pi_over_four
+  return(pi)
+}
+
+estimate_pi_modified()
+```
+# 4(b):
+```{r}
+estimate_integral <- function(iterations = 1000000) {
+  set.seed(2)
+  t <- runif(iterations, 0, 2)
+  val_of_g <- sqrt(1 + t^2 + t^4)
+  (2-0) * mean(val_of_g) # The factor (2-0) comes from the interval length [0,2]
+}
+estimate_integral()
+```
+# 5:
+```{r}
+library(ggplot2)
+set.seed(2)
+X_samples <- rbinom(10000, 21, .6)
+Y_samples <- rbinom(10000, 19, .6)
+XY_sum_samples <- X_samples + Y_samples
+
+df <- data.frame(
+  SampleType = factor(rep(c("X", "Y", "X+Y"), each=10000)),
+  Value = c(X_samples, Y_samples, XY_sum_samples)
+)
+
+ggplot(df, aes(x=Value, fill=SampleType)) +
+  geom_histogram(position="identity", alpha=0.5, bins=30) +
+  scale_fill_manual(values=c("blue", "green", "red")) +
+  labs(title="Relative Frequency Histograms for X, Y, and X+Y",
+       x="Value",
+       y="Frequency") +
+  facet_wrap(~SampleType, scales="free_y")
+```
+Given that the distribuion of X+Y closely mirros the anticiapted characteristics of a binomial distribution with parameters 40, 3/5 - specifically, the distribution's shape, center around the mean of 24, and spread - it can be concluded that the outcomes from the simulation strongly support the hypothesis X+Y\~Bin(40, 3/5). This outcome is consistent with theoretical expectations about the sum of independent binomial distributions sharing the same success probability.

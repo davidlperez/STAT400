@@ -1,0 +1,161 @@
+---
+title: "STAT400-Project3"
+output: html_notebook
+---
+
+# Example(s)
+```{r}
+# This is a small demonstartion of the command replicate(). It replicates drawing a sample of size 15, 10 times
+# from a normal distribution with mean 10 and variance 1. As you can see from the output, the samples appear along
+# the columns as the repetitions appear along the columns.
+
+set.seed(1)
+samples <- replicate (10, rnorm(15,10,1))
+samples
+```
+```{r}
+# We can cycle through the columns and calculate the average of each column as follows by looping through 
+# with a for loop. 
+
+for(i in 1:10) {  
+    cat(mean(samples[,i]), "is the average for column", i, "\n")
+}
+
+# As an exercise read the documentation for the functions apply, sapply etc and see if you can rewrite 
+# the code to avoid the use of the for loop.
+```
+```{r}
+set.seed(1)
+samples <- replicate(1000, rnorm(40, 10, 1))
+sample_mean <- 1:1000
+for(i in 1:1000) {  
+    sample_mean[i] <- mean(samples[,i])
+}
+
+#Empirical verification of unbiasedness
+mean(sample_mean)
+
+#Normality plot
+
+library(ggplot2)
+
+# Create the normal probability plot
+ggplot(data.frame(sample_mean), aes(sample = sample_mean)) +
+stat_qq() +
+stat_qq_line() +
+labs(title = "Normal Probability Plot")
+```
+# 1
+```{r}
+## Uniform Distribution
+set.seed(2)
+# For size 40
+samples_uniform40 <- replicate(1000, runif(40, 0, 1))
+sample_means40 <- apply(samples_uniform40, 2, mean)
+
+# For size 2
+samples_uniform2 <- replicate(1000, runif(2, 0, 1))
+sample_means2 <- apply(samples_uniform2, 2, mean)
+
+# Empirical verification for size 40
+ggplot(data.frame(sample_means40), aes(sample = sample_means40)) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(title = "Normal Probability Plot for Uniform Distribution (n=40)")
+
+# Empirical verification for size 2
+ggplot(data.frame(sample_means2), aes(sample = sample_means2)) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(title = "Normal Probability Plot for Uniform Distribution (n=2)")
+```
+For size 40, the plot should show that sample means are approximately normal, as per the CLT.
+For size 2, the approximation may be poor, indicating that larger sample sizes are needed for the CLT to hold effectively.
+```{r}
+## Exponential Distribution
+set.seed(2)
+samples_exp <- replicate(1000, rexp(40, rate = 4))
+sample_means_exp <- apply(samples_exp, 2, mean)
+
+ggplot(data.frame(sample_means_exp), aes(sample = sample_means_exp)) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(title = "Normal Probability Plot for Exponential Distribution (lambda=4, n=40)")
+```
+The sample means from an exponential distribution with n=40 should also exhibit normality, supporting the CLT.
+
+# 2
+```{r}
+normality_plot <- function(sample_means) {
+  n <- length(sample_means)
+  sorted_means <- sort(sample_means)
+  theoretical_quantiles <- qnorm((1:n - 0.5) / n)
+  
+  plot(theoretical_quantiles, sorted_means, main = "Normality Plot",
+       xlab = "Theoretical Quantiles", ylab = "Sample Quantiles", pch = 19)
+  abline(lm(sorted_means ~ theoretical_quantiles), col = "red")  # Line of best fit
+}
+
+# Using the function for uniform distribution
+normality_plot(sample_means40)
+```
+# 3(i)
+For the PDF of a normal distribution given by:\[f(x|\mu,\sigma^2)=\frac{1}{\sqrt{2\pi\sigma^2}}e^{-\frac{(x-\mu)^2}{2\sigma^2}}\]Given a sample $X_1,X_2,...,X_n$ from this distribution, the likelihood function $L$ for the parameters $\mu$ and $\sigma^2$ based on this sample is the product of the individual densities:\[L(\mu,\sigma^2)=\prod_{i=1}^n\frac{1}{\sqrt{2\pi\sigma^2}}e^{-\frac{(X_i-\mu)^2}{2\sigma^2}}\]Taking the natural logarithm of the likelihood function (to obtain the log-likelihood function, which is easier to differentiate), we get:\[\log L(\mu,\sigma^2)=\sum_{i=1}^n\log\left(\frac{1}{\sqrt{2\pi\sigma^2}}e^{-\frac{(X_i-\mu)^2}{2\sigma^2}}\right)\]\[=-\frac{n}{2}\log(2\pi\sigma^2)-\sum_{i=1}^n\frac{X_i-\mu)^2}{2\sigma^2}\]To find the MLEs, we take derivatives of $\log L(\mu,\sigma^2)$ with respect to $\mu$ and $\sigma^2$, set them to zero and solve for $\mu$ and $\sigma^2$.  
+**Maximizing with respect to $\mu$:** \[\frac{\partial\log L}{\partial\mu}=\sum_{i=1}^n\frac{2(X_i-\mu)}{2\sigma^2}=0\] \[\implies\sum_{i=1}^n(X_i-\mu)=0\] \[\implies n\mu=\sum_{i=1}^nX_i\] \[\implies\widehat{\mu}=\frac{\sum_{i=1}^nX_i}{n}\]This result tells us that the MLE for $\mu$ is the sample mean.  
+**Maximizing with respect to $\sigma^2$:**\[\frac{\partial\log L}{\partial\sigma^2}=-\frac{n}{2\sigma^2}+\sum_{i=1}^n\frac{(X_i-\mu)^2}{2(\sigma^2)^2}=0\] \[\implies-\frac{n}{2\sigma^2}+\frac{\sum_{i=1}^n(X_i-\widehat\mu)^2}{2(\sigma^2)^2}=0\] \[\implies n\sigma^2=\sum_{i=1}^n(X_i-\widehat\mu)^2\] \[\implies\widehat\sigma^2=\frac{\sum_{i=1}^n(X_i-\widehat\mu)^2}{n}\]Thus, the MLE for $\sigma^2$ is the sample variance.  
+
+# 3(ii)
+```{r}
+set.seed(2)
+sample_normal <- rnorm(4000, mean = 2, sd = sqrt(5))
+mu_hat <- mean(sample_normal)
+sigma_squared_hat <- sum((sample_normal - mu_hat)^2) / length(sample_normal)
+
+# Output the estimates
+mu_hat
+sigma_squared_hat
+```
+
+# 4
+```{r}
+set.seed(2)
+lambda <- 2
+n <- 50
+sample_expo <- replicate(10000, rexp(n, rate = lambda))
+sample_means_expo <- colMeans(sample_expo)
+
+# Standard error of the mean
+se <- (1 / lambda) / sqrt(n)
+
+# 99% Confidence interval using the normal approximation
+z <- qnorm(0.995)  # Z-value for 99%
+ci_lower <- sample_means_expo - z * se
+ci_upper <- sample_means_expo + z * se
+
+# Theoretical mean
+theoretical_mean <- 1 / lambda
+
+# Proportion of intervals containing the theoretical mean
+ci_coverage <- mean(ci_lower <= theoretical_mean & ci_upper >= theoretical_mean)
+
+# Display the proportion of confidence intervals that contain the theoretical mean
+ci_coverage
+
+```
+
+# 5
+```{r}
+data(iris)
+by_species <- split(iris$Petal.Length, iris$Species)
+ci_results <- lapply(by_species, function(x) {
+  mu <- mean(x)
+  sigma <- sd(x)
+  n <- length(x)
+  error <- qt(0.975, df = n - 1) * sigma / sqrt(n)
+  c(lower = mu - error, upper = mu + error)
+})
+
+# Outputs
+print(ci_results)
+```
+Confidence intervals are constructed for each species' petal length using the t-distribution, appropriate here because sample sizes may not be sufficiently large for the CLT to apply completely. This approach accounts for smaller sample sizes and the inherent variability in the data.
